@@ -194,6 +194,82 @@ static void print_table(const Student *arr, size_t n) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Пункт 3 задания: сортировка через qsort из <stdlib.h>.            */
+/*                                                                    */
+/*  qsort требует, чтобы компаратор имел сигнатуру:                   */
+/*     int cmp(const void *a, const void *b);                         */
+/*                                                                    */
+/*  Возвращаемое значение:                                            */
+/*     <0  если *a должен идти раньше *b,                             */
+/*     >0  если *a должен идти позже *b,                              */
+/*     0   если они "равны" для целей сортировки.                     */
+/*                                                                    */
+/*  void* — потому что qsort универсален и не знает тип элементов.    */
+/*  Внутри компаратора мы приводим указатели к (const Student *).     */
+/* ------------------------------------------------------------------ */
+
+/* Сравнение по фамилии: лексикографически, через strcmp.              */
+static int cmp_by_surname(const void *a, const void *b) {
+    const Student *sa = (const Student *)a;
+    const Student *sb = (const Student *)b;
+    return strcmp(sa->surname, sb->surname);
+}
+
+/* Сравнение по номеру группы. Просто разность двух int, но напрямую   */
+/* (a - b) делать нельзя: при больших значениях int может переполниться. */
+/* Поэтому пишем явные условия.                                        */
+static int cmp_by_group(const void *a, const void *b) {
+    const Student *sa = (const Student *)a;
+    const Student *sb = (const Student *)b;
+    if (sa->group < sb->group) return -1;
+    if (sa->group > sb->group) return  1;
+    return 0;
+}
+
+/* Сравнение по среднему баллу. То же самое, но для double.            */
+/* По убыванию: лучшие (с большим баллом) должны идти первыми.         */
+static int cmp_by_avg_desc(const void *a, const void *b) {
+    const Student *sa = (const Student *)a;
+    const Student *sb = (const Student *)b;
+    if (sa->avg_grade > sb->avg_grade) return -1;
+    if (sa->avg_grade < sb->avg_grade) return  1;
+    return 0;
+}
+
+/* Обёртка: спрашивает у пользователя, по какому полю сортировать,    */
+/* и вызывает qsort с подходящим компаратором.                         */
+static void sort_students(Student *arr, size_t n) {
+    if (n < 2 || arr == NULL) {
+        printf("Нечего сортировать (студентов меньше двух).\n");
+        return;
+    }
+
+    printf("\nСортировать по:\n");
+    printf("  1 — фамилии (по алфавиту)\n");
+    printf("  2 — номеру группы (по возрастанию)\n");
+    printf("  3 — среднему баллу (по убыванию)\n");
+    printf("Выбор: ");
+
+    int key = 0;
+    if (!read_int(&key)) {
+        printf("Ошибка ввода.\n");
+        return;
+    }
+
+    /* qsort(база, число_элементов, размер_элемента, компаратор).       */
+    switch (key) {
+        case 1: qsort(arr, n, sizeof(Student), cmp_by_surname);  break;
+        case 2: qsort(arr, n, sizeof(Student), cmp_by_group);    break;
+        case 3: qsort(arr, n, sizeof(Student), cmp_by_avg_desc); break;
+        default:
+            printf("Неизвестный ключ сортировки.\n");
+            return;
+    }
+
+    printf("Готово. Используйте пункт 2, чтобы посмотреть таблицу.\n");
+}
+
+/* ------------------------------------------------------------------ */
 /*  Пункт 7 задания (часть 1): добавить ОДНОГО студента в конец массива.*/
 /*                                                                    */
 /*  Используем realloc, чтобы РАСШИРИТЬ существующий блок памяти на   */
@@ -388,7 +464,7 @@ int main(void) {
                 print_table(arr, n);
                 break;
             case 3:
-                printf("[TODO] сортировка\n");
+                sort_students(arr, n);
                 break;
             case 4:
                 printf("[TODO] поиск по группе\n");
